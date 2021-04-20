@@ -11,6 +11,12 @@ nchnls_i    =           1
 
 zakinit 32, 32
 
+;-----------XANADUFM OPCODE---------------------------------
+/* xanadufm - the stereo version
+   xanadufmm - the mono version
+   Based on the work of Joseph Kung. 
+   The essential algorithm is copied directly from code for
+   "Xanadu". See for more info. */
 ;-----------------------------------------------------------
  opcode xanadufm, aa, aaaa                ;A-RATE STEREO
 acps, amodi, amodr, aspr xin		;INPUTS
@@ -135,6 +141,8 @@ f129 0 -19 -51 19        2.0      220      0      \
 [$EDO(16'19')] \
 [$EDO(17'19')] \
 [$EDO(18'19')] 
+
+i 101010 0 0.01 ;table constructor for TX81Z
 
 i 3142 0 2
 
