@@ -142,8 +142,6 @@ f129 0 -19 -51 19        2.0      220      0      \
 [$EDO(17'19')] \
 [$EDO(18'19')] 
 
-i 101010 0 0.01 ;table constructor for TX81Z
-
 i 3142 0 2
 
 i "Mixer" 0 z
