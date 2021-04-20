@@ -221,3 +221,6 @@ a2 TX_HP a0
 a3 TX_LP a2
 out  a3*kOut  ; kout table 99
 endin
+
+
+i 101010 0 0.01 ;table constructor for TX81Z
