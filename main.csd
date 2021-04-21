@@ -11,6 +11,95 @@ nchnls_i    =           1
 
 zakinit 32, 32
 
+;-----------BABOON REVERB-----------------------------------
+/*
+Baboon - UDO wrapper for the babo opcode
+
+DESCRIPTION
+Baboon is a full expert mode wrapper for the babo opcode, a physical model reverberator based on the work of David Rochesso.
+
+SYNTAX
+aL,aR Baboon idur,ixstart,iystart,izstart,ixend,iyend,izend,ixsize,iysize,izsize,idiff,idecay,ihidecay,irx,iry,irz,irdist,idirect,iearly,ain
+
+INITIALIZATION
+none
+
+PERFORMANCE
+aL,aR = babo left and right audio outputs
+See the Csound manual for the babo opcode for details of each i-rate variable.
+
+CREDITS
+by Brian Wong, 2010
+*/
+
+opcode Baboon,aa,iiiiiiiiiiiiiiiiiiia
+idur,ixstart,iystart,izstart,ixend,iyend,izend,ixsize,iysize,izsize,idiff,idecay,ihidecay,irx,iry,irz,irdist,idirect,iearly,ain xin
+ksource_x line    ixstart, idur, ixend
+ksource_y line    iystart, idur, iyend
+ksource_z line    izstart, idur, izend
+iexpert ftgen 0, 0, 8, -2, idecay, ihidecay, irx, iry, irz, irdist, idirect, iearly
+aL,aR     babo    ain, ksource_x, ksource_y, ksource_z, ixsize, iysize, izsize, idiff, iexpert
+xout    aL,aR
+ endop
+
+
+;-----------SHIMMER REVERB----------------------------------
+/* Source: https://github.com/kunstmusik/libsyi/blob/master/shimmer_reverb.udo */
+/* shimmer_reverb - stereo effect with reverb and spectrally processed pitch-shifted feedback
+	Inputs:
+		al - left input audio signal
+		ar - right input audio signal 
+		kpredelay - delay time in milliseconds for pre-delay of input signal before entering reverb 
+		krvbfblvl - feedback setting for reverbsc (a large setting like 0.95 can be nice)
+		krvbco - cutoff setting for reverbsc (affects brightness of effect)
+		kfblvl - feedback amount for delayed signal that is fed back into reverb (0.45 is a good value to start with)
+		kfbdeltime - delay time in milliseconds for delayed signal that is fed back into reverb (start with 100)
+		kratio - amount to transpose feedback signal by. 2 transposes by octaves, 1.5 is up by fifths, etc.
+			
+*/
+opcode shimmer_reverb, aa, aakkkkkk
+	al, ar, kpredelay, krvbfblvl, krvbco, kfblvl, kfbdeltime, kratio  xin
+
+  ; pre-delay
+  al = vdelay3(al, kpredelay, 1000)
+  ar = vdelay3(ar, kpredelay, 1000)
+ 
+  afbl init 0
+  afbr init 0
+
+  al = al + (afbl * kfblvl)
+  ar = ar + (afbr * kfblvl)
+
+  ; important, or signal bias grows rapidly
+  al = dcblock2(al)
+  ar = dcblock2(ar)
+
+	; tanh for limiting
+  ;al = tanh(al)
+  ;ar = tanh(ar)
+
+  al, ar reverbsc al, ar, krvbfblvl, krvbco 
+
+  ifftsize  = 2048 
+  ioverlap  = ifftsize / 4 
+  iwinsize  = ifftsize 
+  iwinshape = 1; von-Hann window 
+
+  fftin     pvsanal al, ifftsize, ioverlap, iwinsize, iwinshape 
+  fftscale  pvscale fftin, kratio, 0, 1
+  atransL   pvsynth fftscale
+
+  fftin2    pvsanal ar, ifftsize, ioverlap, iwinsize, iwinshape 
+  fftscale2 pvscale fftin2, kratio, 0, 1
+  atransR   pvsynth fftscale2
+
+  ;; delay the feedback to let it build up over time
+  afbl = vdelay3(atransL, kfbdeltime, 4000)
+  afbr = vdelay3(atransR, kfbdeltime, 4000)
+
+  xout al, ar
+endop
+
 ;-----------XANADUFM OPCODE---------------------------------
 /* xanadufm - the stereo version
    xanadufmm - the mono version
@@ -81,10 +170,9 @@ xout ares				;OUTPUTS
  endop
 ;-----------------------------------------------------------
 
- opcode GetCpsI, i, ii
-itr, iN     xin ;input: transposition, scale degree
-icps        table       iN, 129, 0, 0, 0
-icps        *=          itr
+ opcode GetCpsI, i, i
+iN     xin ;input: transposition, scale degree
+icps        table       iN%ftlen(129), 129, 0, 0, 0
             xout        icps
  endop
 
@@ -92,18 +180,21 @@ icps        *=          itr
 ;-----------------------------------------------------------
  instr 3142
 ienv        =           p4    ;select f-table
-icps        GetCpsI     0.5, p5 ;select an octave, and a scale number
+icps        GetCpsI     p5 ;select an octave, and a scale number
 kndx        line        0, 1, p6 
-amono       xanadufmm   icps
-aL, aR      xanadufm    icps 
-outs aL, aR
+kenv_       tablei      kndx, ienv, 0, 0, 1
+kenv        =           ampdbfs(kenv_)-ampdbfs(-96)
+aL, aR      xanadufm    icps, 4, .67, 2
+            zawm        aL*kenv, 1
+            zawm        aR*kenv, 2
  endin
 
 
  instr Mixer
 ainL zar 1
 ainR zar 2
-outs ainL, ainR
+ainL, ainR Baboon 1, 2, 3, 5, 2, 3, 5, 13, 17, 19, 0.5, 0.99, 0.3, 0, 0, 0, 0.3, .5, .5
+outs ainL*db(-6), ainR*db(-6)
 zacl 0, 2
  endin
 
@@ -119,9 +210,12 @@ f2 0 65537  11 1      ;cosine wave
 f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
 ;-----------------------------------------------------------
 
+;------------------ENVELOPE FTABLES-------------------------
+f 3000 0 2048 -7 -96 1024 -12 1024 -96
+
 #define EDO(a'b') #[2^[[$a]/[$b]]]#
              ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
-f129 0 -19 -51 19        2.0      220      0      \
+f129 0 -256 -51 19        2.0      220      38      \
 1 \                 ;iN = 0
 [$EDO(1'19')] \     
 [$EDO(2'19')] \     ;iN = 2
@@ -142,7 +236,7 @@ f129 0 -19 -51 19        2.0      220      0      \
 [$EDO(17'19')] \
 [$EDO(18'19')] 
 
-i 3142 0 2
+i 3142 0 2 3000 19 1024
 
 i "Mixer" 0 z
 
