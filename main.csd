@@ -180,23 +180,35 @@ icps        table       iN%ftlen(iscaleft), iscaleft, 0, 0, 0
             xout        icps
  endop
 
-
-;-----------------------------------------------------------
- instr 3142
+#define CONTROLS #
 ienv        =           p4    ;select f-table
 icps        GetCpsI     p5 ;select an scale, and a scale number
 kndx        line        0, 1, p6 
 iFM         =           p7 ;FM Index (amount of modulation)
+iZa         =           p8 ;which za-index to send output
 kenv_       table       kndx, ienv, 0, 0, 0 
 kenv        =           ampdbfs(kenv_)-ampdbfs(-96) 
 kenv2       linseg      1, p3, -1
 kFM         =           iFM ;FM Index for xanadufm
+ksone       tablei      k(icps)/32000, 2222, 1
+#
+
+;-----------------------------------------------------------
+ instr 3142
+$CONTROLS
 aL          xanadufmm   k(icps), kFM, 1.5^kenv2
 aR          xanadufmm   k(icps), kFM, 1.5^(-kenv2)
-            zawm        aL*kenv, 1
-            zawm        aR*kenv, 2
+            zawm        aL*kenv*db(-ksone), iZa
+            zawm        aR*kenv*db(-ksone), iZa+1
  endin
 
+ instr 3146    
+$CONTROLS
+aL          xanadufmm   k(icps), kFM, 1.5^kenv2
+aR          xanadufmm   k(icps), kFM, 1.5^(-kenv2)
+            zawm        aL*kenv*db(-ksone), iZa
+            zawm        aR*kenv*db(-ksone), iZa+1
+ endin
 
  instr Mixer
 ainL zar 1
@@ -204,12 +216,24 @@ ainR zar 2
 aL, aR  reverbsc ainR, ainL, 0.92, 14000, sr, 0.75, .1
 aL      nreverb  aL, 4, .25, 0, 2, 7777, 2, 7776
 aR      nreverb  aR, 4, .25, 0, 2, 7775, 2, 7774
-;aL, aR Baboon 19.0, 0.510, 0.89, 0.85, ainL
-;aJ, aK Baboon 38.0, 0.510, 0.89, 0.85, ainR
-;aL += aJ+ainL
-;aR += aK+ainR
-outs (aL+ainL)*db(-18), (aR+ainR)*db(-18)
-zacl 0, 2
+zawm (aL+ainL)*db(-18), 17
+zawm (aR+ainR)*db(-18), 18
+
+ainL zar 3
+ainR zar 4
+aL, aR shimmer_reverb ainL, ainR, 120, .95, 12000, .45, 100, 2^(11/19)
+zawm aL, 19
+zawm aR, 20
+zacl 0, 4
+ endin
+
+ instr 8000 ;output a pair of za-signals
+iZaL = p4
+iZaR = p4+1
+aL zar iZaL
+aR zar iZaR
+outs aL, aR
+zacl iZaL, iZaR
  endin
 
 </CsInstruments>
@@ -221,6 +245,9 @@ zacl 0, 2
 
 i "Mixer" 0 z
 
+i 8000 0 z 17
+i 8000 0 z 19
+
 ;   The Function Tables
 ;   -------------------
 ;   Include in score or FMpad opcode will not work
@@ -230,6 +257,9 @@ f1 0 65537  10 1      ;sine wave
 f2 0 65537  11 1      ;cosine wave
 f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
 ;-----------------------------------------------------------
+
+/* SONE FUNCTION */
+f 2222 0 16385 "sone" 0 32000 32000 0
 
 ;-----------------NREVERB FILTER TABLES---------------------
 f 7777 0 4 -2 [8/13] [233/500] [.5] [.95] 
@@ -242,6 +272,7 @@ f 3000 0 2048 -7 -96 1024 -12 1024 -96
 f 3001 0 2048 -7 -96 512 -10 512 -12 512 -17 256 -17 256 -96
 f 3002 0 2048 -7 -96 128 -10 128 -12 256 -14 512 -13 1024 -96
 f 3003 0 2048 -7 -96 126 -32 126 -48 256 -39 512 -36 512 -31 256 -37 256 -96
+f 3004 0 2048 -7 -96 256 -24 256 -26 512 -26 512 -30 512 -96 
 
 #define EDO(a'b') #[2^[[$a]/[$b]]]#
              ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
@@ -267,16 +298,24 @@ f130 0 -64 -51 8        4.0     110  4     \   ;starts on A+4
 [$EDO(30'19')] \   ;A+14
 [$EDO(33'19')]      ;A+18
 
-#define SWELA(t'd'a'b'i') #
-i 3142 [$t] [8] 3000 [$a] [[256*$d]] [$i]
-i 3142 [$t] [8] 3000 [$b] [[256*$d]] [$i]
+#define SWIRL(t') #
+i 3142 [$t] [8] 3004 [1.08] [[1024]] [2] 3
 #
 
-$SWELA(0'1'1.08'1.09'8')
-$SWELA(5'1'2.09'2.10'8.5')
+#define SWELL(t'd'a'b'i') #
+i 3142 [$t] [8] 3000 [$a] [[256*$d]] [$i] 1
+i 3142 [$t] [8] 3000 [$b] [[256*$d]] [$i] 1
+#
 
-$SWELA(13'1.5'1.10'1.11'8.5')
-$SWELA(16'1'1.13'1.14'8')
+$SWIRL(0'8)
+
+b 10 
+$SWELL(0'1'1.08'1.09'8')
+$SWELL(5'1'2.09'2.10'8.5')
+
+$SWELL(13'1.5'1.10'1.11'8.5')
+$SWELL(16'1'1.13'1.14'8')
+
 
 
 
