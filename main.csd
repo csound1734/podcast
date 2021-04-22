@@ -202,15 +202,13 @@ aR          xanadufmm   k(icps), kFM, 1.5^(-kenv2)
             zawm        aR*kenv*db(-ksone), iZa+1
  endin
 
- instr 3146    
-$CONTROLS
-aL          xanadufmm   k(icps), kFM, 1.5^kenv2
-aR          xanadufmm   k(icps), kFM, 1.5^(-kenv2)
-            zawm        aL*kenv*db(-ksone), iZa
-            zawm        aR*kenv*db(-ksone), iZa+1
+ instr 3146 
+icps GetCpsI p5
+ares marimba p4, icps, .5, .33, 4, 0, 0, -1, 0.1, 0, 0
+outs ares, ares
  endin
 
- instr Mixer
+ instr Matrix
 ainL zar 1
 ainR zar 2
 aL, aR  reverbsc ainR, ainL, 0.92, 14000, sr, 0.75, .1
@@ -243,7 +241,7 @@ zacl iZaL, iZaR
 
 
 
-i "Mixer" 0 z
+i "Matrix" 0 z
 
 i 8000 0 z 17
 i 8000 0 z 19
@@ -256,6 +254,7 @@ i 8000 0 z 19
 f1 0 65537  10 1      ;sine wave
 f2 0 65537  11 1      ;cosine wave
 f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
+f4 0 65537 -5  1 65537 0.1 ;strike impulse response for marimba
 ;-----------------------------------------------------------
 
 /* SONE FUNCTION */
