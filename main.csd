@@ -1,3 +1,127 @@
+Minimal Example using csound-extended for WebAssembly
+This is a completely self-contained example, all in one file, and without any unnecessary features, showing how to play a Csound piece in a Web browser using csound-extended for WebAssembly. This example uses the AudioWorklet implementation of WebAudio defined in CsoundAudioNode.js.
+
+init_static_modules...
+STARTING FILE
+Creating options
+Creating orchestra
+closing tag
+Creating score
+instr Mixer uses instrument number 1
+defining argument `EDO``a as...#3#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#6#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#11#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#17#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#22#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#27#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#33#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#4#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#7#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#11#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#15#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#21#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#30#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `EDO``a as...#33#
+defining argument `EDO``b as...#19#
+defining argument `EDO`` as...##
+defining argument `STAB``t as...#0#
+defining argument `STAB``a as...#1.15#
+defining argument `STAB``b as...#1.14#
+defining argument `STAB``i as...#3#
+defining argument `STAB`` as...##
+defining argument `STAB``t as...#5#
+defining argument `STAB``a as...#1.13#
+defining argument `STAB``b as...#1.12#
+defining argument `STAB``i as...#4#
+defining argument `STAB`` as...##
+mediaDevices: 0 audioinput: Default - Internal Mic
+mediaDevices: 1 audioinput: Internal Mic
+mediaDevices: 2 videoinput: 
+mediaDevices: 3 audiooutput: Default - Speaker
+mediaDevices: 4 audiooutput: Speaker
+WebAudio frames per second:         48000
+WebAudio maximum output channels:   2
+Trying to open browser audio input...
+WebAudio UserMedia outputs:         1
+Audio input initialized.
+is_playing...
+CsoundAudioProcessor starting...
+displays suppressed
+0dBFS level = 32768.0
+orch now loaded
+audio buffered in 256 sample-frame blocks
+SECTION 1:
+CsoundAudioProcessor is rendering in real time: dac
+CsoundAudioProcessor started.
+CsoundAudioProcessor frames per quantum:        128
+CsoundAudioProcessor input channels:            2
+CsoundAudioProcessor output channels:           2
+Warning! Csound nchnls_i (1) doesn't match the WebAudio input channel count (2).
+CsoundAudioProcessor format_validated: true.
+ftable 1:
+ftable 2:
+ftable 3:
+ftable 7777:
+ftable 7776:
+ftable 7775:
+ftable 7774:
+ftable 3000:
+ftable 3001:
+ftable 3002:
+ftable 3003:
+ftable 129:
+ftable 130:
+new alloc for instr Mixer:
+INIT ERROR in instr 1 (opcode nreverb) line 204: reverbx; Combs ftable must have 2 time and 2 gain values
+ from file *string* (1)
+aL	nreverb	aL	5	.05	0	2	7777	2	7776	
+	  B  0.000 - note deleted.  i1 (Mixer) had 1 init errors
+new alloc for instr 3142:
+new alloc for instr 3142:
+B  0.000 ..  5.000 T  5.000 TT  5.000 M:      0        0  
+[33526.58499999961 Stop.]
+[33538.53499999968 Stop resolved.]
+inactive allocs returned to freespace
+end of score.		   overall amps:      0        0  
+	   overall samples out of range:        0        0
+1 errors in performance
+Elapsed time at end of performance: real: 23.329s, CPU: 23.329s
+resetting Csound instance
+0dBFS level = 32768.0
+--Csound version 6.15 (float samples) Feb  1 2021
+[commit: d58fe87000bcb965e49ac11961b4b97a4e4fb924]
+libsndfile-1.0.25
+
+ 
+
+The complete .csd file of the Xanadu example from the Csound repository is stored in the text area below. Clicking on the Play button performs this file. Note that due to restrictions in the WebAudio API, the user must click this button before the library can be loaded, so you most likely will have to click again once the library is loaded to actually play the piece. Clicking on the Stop button ends the performance. The .csd should (and sometimes must) set sr (probably 48000), ksmps = 128, nchnls, nchnls_i, and sample word format to be consistent with the host.
+
 <CsoundSynthesizer>
 <CsOptions>
 -odac -d -m195
@@ -174,7 +298,9 @@ xout ares				;OUTPUTS
 
  opcode GetCpsI, i, i
 iN     xin ;input: transposition, scale degree
-icps        table       iN%ftlen(129), 129, 0, 0, 0
+iscaleft    =           128+int(iN)
+iN          =           100*(iN%1)
+icps        table       iN%ftlen(iscaleft), iscaleft, 0, 0, 0
             xout        icps
  endop
 
@@ -182,11 +308,14 @@ icps        table       iN%ftlen(129), 129, 0, 0, 0
 ;-----------------------------------------------------------
  instr 3142
 ienv        =           p4    ;select f-table
-icps        GetCpsI     p5 ;select an octave, and a scale number
+icps        GetCpsI     p5 ;select an scale, and a scale number
 kndx        line        0, 1, p6 
-kenv_       tablei      kndx, ienv, 0, 0, 0
-kenv        =           ampdbfs(kenv_)-ampdbfs(-96)
-aL, aR      xanadufm    icps, 4, .67, 2
+iFM         =           p7 ;FM Index (amount of modulation)
+kenv_       table       kndx, ienv, 0, 0, 0 
+kenv        =           ampdbfs(kenv_)-ampdbfs(-96) 
+kenv2       expon       0.1, p3/2, 0.075
+kFM         =           iFM ;FM Index for xanadufm
+aL, aR      xanadufm    k(icps), kFM, .67, 2
             zawm        aL*kenv, 1
             zawm        aR*kenv, 2
  endin
@@ -195,16 +324,26 @@ aL, aR      xanadufm    icps, 4, .67, 2
  instr Mixer
 ainL zar 1
 ainR zar 2
-aL, aR Baboon 10, 0.070, 0.999999, 0.999999, ainL
-aJ, aK Baboon 11, 0.070, 0.999999, 0.999999, ainR
-aL += aJ+ainL
-aR += aK+ainR
-outs aL*db(-12), aR*db(-12)
+aL, aR  reverbsc ainR, ainL, 0.62, 14000, sr, 0.75, .1
+aL      nreverb  aL, 12, .25, 0, 2, 7777, 2, 7776
+aR      nreverb  aR, 12, .25, 0, 2, 7775, 2, 7774
+;aL, aR Baboon 19.0, 0.510, 0.89, 0.85, ainL
+;aJ, aK Baboon 38.0, 0.510, 0.89, 0.85, ainR
+;aL += aJ+ainL
+;aR += aK+ainR
+outs (aL+ainL)*db(-12), (aR+ainR)*db(-12)
 zacl 0, 2
  endin
 
 </CsInstruments>
+
 <CsScore>
+
+
+
+
+i "Mixer" 0 z
+
 ;   The Function Tables
 ;   -------------------
 ;   Include in score or FMpad opcode will not work
@@ -215,9 +354,17 @@ f2 0 65537  11 1      ;cosine wave
 f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
 ;-----------------------------------------------------------
 
+;-----------------NREVERB FILTER TABLES---------------------
+f 7777 0 4 -2 [8/13] [233/500] [.5] [.95] 
+f 7776 0 4 -2 [1/21] [144/500] [.5] [.95] 
+f 7775 0 4 -2 [5/8] [13/987] [.5] [.5] 
+f 7774 0 4 -2 [1/5] [13/89] [.5] [.5] 
+
 ;------------------ENVELOPE FTABLES-------------------------
 f 3000 0 2048 -7 -96 1024 -12 1024 -96
 f 3001 0 2048 -7 -96 512 -10 512 -12 512 -17 256 -17 256 -96
+f 3002 0 2048 -7 -96 128 -10 128 -12 256 -14 512 -13 1024 -96
+f 3003 0 2048 -7 -96 126 -32 126 -48 256 -39 512 -36 512 -31 256 -37 256 -96
 
 #define EDO(a'b') #[2^[[$a]/[$b]]]#
              ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
@@ -243,20 +390,23 @@ f130 0 -64 -51 8        4.0     110  4     \   ;starts on A+4
 [$EDO(30'19')] \   ;A+14
 [$EDO(33'19')]      ;A+18
 
-i 3142 0 4 3001 15 [512]
-i 3142 0 4 3001 14 [512]
+#define SWELA(t'd'a'b'i') #
+i 3142 [$t] [8] 3000 [$a] [[256*$d]] [$i]
+i 3142 [$t] [8] 3000 [$b] [[256*$d]] [$i]
+#
 
-i 3142 5 4 3001 14 [670]
-i 3142 5 4 3001 13 [670]
+$SWELA(0'1'1.08'1.09'2')
+$SWELA(5'1'2.09'2.10'.5')
 
-i 3142 8 4 3000 13 [1024]
-i 3142 8 4 3000 11 [1024]
-
-i 3142 10 4 3001 14 [512]
-i 3142 10 4 3001 13 [512]
+$SWELA(13'1.5'1.10'1.11'2')
+$SWELA(16'1'1.13'1.14'.5')
 
 
-i "Mixer" 0 z
+
+
+
+
 
 </CsScore>
 </CsoundSynthesizer>    
+
