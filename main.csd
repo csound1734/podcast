@@ -19,7 +19,7 @@ DESCRIPTION
 Baboon is a full expert mode wrapper for the babo opcode, a physical model reverberator based on the work of David Rochesso.
 
 SYNTAX
-aL,aR Baboon idur,ixstart,iystart,izstart,ixend,iyend,izend,ixsize,iysize,izsize,idiff,idecay,ihidecay,irx,iry,irz,irdist,idirect,iearly,ain
+aL,aR Baboon ixsize,idiff,idecay,ihidecay, ain
 
 INITIALIZATION
 none
@@ -32,13 +32,15 @@ CREDITS
 by Brian Wong, 2010
 */
 
-opcode Baboon,aa,iiiiiiiiiiiiiiiiiiia
-idur,ixstart,iystart,izstart,ixend,iyend,izend,ixsize,iysize,izsize,idiff,idecay,ihidecay,irx,iry,irz,irdist,idirect,iearly,ain xin
-ksource_x line    ixstart, idur, ixend
-ksource_y line    iystart, idur, iyend
-ksource_z line    izstart, idur, izend
-iexpert ftgen 0, 0, 8, -2, idecay, ihidecay, irx, iry, irz, irdist, idirect, iearly
-aL,aR     babo    ain, ksource_x, ksource_y, ksource_z, ixsize, iysize, izsize, idiff, iexpert
+opcode Baboon,aa,iiiia
+ixsize,idiff,idecay,ihidecay,ain xin
+iysize     =      ixsize*(2^0.1)
+izsize     =      ixsize*(3^0.1)
+ksource_x jitter ixsize*0.5, 1, 2
+ksource_y jitter ixsize*0.5, 1, 2
+ksource_z jitter ixsize*0.5, 1, 2
+iexpert ftgen 0, 0, 8, -2, idecay, ihidecay, ixsize*(13/14),iysize*(13/14),izsize*(13/14), 0.3, 0, db(-10)
+aL,aR     babo    ain, ksource_x,ksource_y,ksource_z, ixsize, iysize, izsize, idiff, iexpert
 xout    aL,aR
  endop
 
@@ -182,7 +184,7 @@ icps        table       iN%ftlen(129), 129, 0, 0, 0
 ienv        =           p4    ;select f-table
 icps        GetCpsI     p5 ;select an octave, and a scale number
 kndx        line        0, 1, p6 
-kenv_       tablei      kndx, ienv, 0, 0, 1
+kenv_       tablei      kndx, ienv, 0, 0, 0
 kenv        =           ampdbfs(kenv_)-ampdbfs(-96)
 aL, aR      xanadufm    icps, 4, .67, 2
             zawm        aL*kenv, 1
@@ -193,8 +195,11 @@ aL, aR      xanadufm    icps, 4, .67, 2
  instr Mixer
 ainL zar 1
 ainR zar 2
-ainL, ainR Baboon 1, 2, 3, 5, 2, 3, 5, 13, 17, 19, 0.5, 0.99, 0.3, 0, 0, 0, 0.3, .5, .5
-outs ainL*db(-6), ainR*db(-6)
+aL, aR Baboon 10, 0.070, 0.999999, 0.999999, ainL
+aJ, aK Baboon 11, 0.070, 0.999999, 0.999999, ainR
+aL += aJ+ainL
+aR += aK+ainR
+outs aL*db(-12), aR*db(-12)
 zacl 0, 2
  endin
 
@@ -212,31 +217,44 @@ f3 0 65537 -12 20.0  ;unscaled ln(I(x)) from 0 to 20.0
 
 ;------------------ENVELOPE FTABLES-------------------------
 f 3000 0 2048 -7 -96 1024 -12 1024 -96
+f 3001 0 2048 -7 -96 512 -10 512 -12 512 -17 256 -17 256 -96
 
 #define EDO(a'b') #[2^[[$a]/[$b]]]#
              ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
-f129 0 -256 -51 19        2.0      220      38      \
-1 \                 ;iN = 0
-[$EDO(1'19')] \     
-[$EDO(2'19')] \     ;iN = 2
-[$EDO(3'19')] \
-[$EDO(4'19')] \   ;iN = 4
-[$EDO(5'19')] \
-[$EDO(6'19')] \   ;iN = 6
-[$EDO(7'19')] \
-[$EDO(8'19')] \   ;iN = 8
-[$EDO(9'19')] \
-[$EDO(10'19')] \
-[$EDO(11'19')] \
-[$EDO(12'19')] \
-[$EDO(13'19')] \
-[$EDO(14'19')] \
-[$EDO(15'19')] \
-[$EDO(16'19')] \
-[$EDO(17'19')] \
-[$EDO(18'19')] 
+f129 0 -64 -51 8        4.0      55      0      \
+1 \                 ;A
+[$EDO(3'19')] \     ;A+1(chrom semi)
+[$EDO(6'19')] \     ;A+6(major third)
+[$EDO(11'19')] \    ;A+11(p fifth)
+[$EDO(17'19')] \   ;A+17(maj seventh)
+[$EDO(22'19')] \    ;A2+3(whole tone)
+[$EDO(27'19')] \   ;A2+8(p fourth)
+[$EDO(33'19')]      ;A2+14(maj sixth)
 
-i 3142 0 2 3000 19 1024
+             ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
+f130 0 -64 -51 8        4.0     110  4     \   ;starts on A+4
+
+1                   ;A+4(septimal whole)
+[$EDO(4'19')] \     ;A+8(p fourth)
+[$EDO(7'19')] \     ;A+11(p fifth)
+[$EDO(11'19')] \    ;A+14(p sixth)
+[$EDO(15'19')] \   ;A
+[$EDO(21'19')] \    ;A+6
+[$EDO(30'19')] \   ;A+14
+[$EDO(33'19')]      ;A+18
+
+i 3142 0 4 3001 15 [512]
+i 3142 0 4 3001 14 [512]
+
+i 3142 5 4 3001 14 [670]
+i 3142 5 4 3001 13 [670]
+
+i 3142 8 4 3000 13 [1024]
+i 3142 8 4 3000 11 [1024]
+
+i 3142 10 4 3001 14 [512]
+i 3142 10 4 3001 13 [512]
+
 
 i "Mixer" 0 z
 
