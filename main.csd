@@ -189,9 +189,10 @@ kndx        line        0, 1, p6
 iFM         =           p7 ;FM Index (amount of modulation)
 kenv_       table       kndx, ienv, 0, 0, 0 
 kenv        =           ampdbfs(kenv_)-ampdbfs(-96) 
-kenv2       expon       0.1, p3/2, 0.075
+kenv2       linseg      1, p3, -1
 kFM         =           iFM ;FM Index for xanadufm
-aL, aR      xanadufm    k(icps), kFM, .67, 2
+aL          xanadufmm   k(icps), kFM, 1.5^kenv2
+aR          xanadufmm   k(icps), kFM, 1.5^(-kenv2)
             zawm        aL*kenv, 1
             zawm        aR*kenv, 2
  endin
@@ -200,14 +201,14 @@ aL, aR      xanadufm    k(icps), kFM, .67, 2
  instr Mixer
 ainL zar 1
 ainR zar 2
-aL, aR  reverbsc ainR, ainL, 0.62, 14000, sr, 0.75, .1
-aL      nreverb  aL, 12, .25, 0, 2, 7777, 2, 7776
-aR      nreverb  aR, 12, .25, 0, 2, 7775, 2, 7774
+aL, aR  reverbsc ainR, ainL, 0.92, 14000, sr, 0.75, .1
+aL      nreverb  aL, 4, .25, 0, 2, 7777, 2, 7776
+aR      nreverb  aR, 4, .25, 0, 2, 7775, 2, 7774
 ;aL, aR Baboon 19.0, 0.510, 0.89, 0.85, ainL
 ;aJ, aK Baboon 38.0, 0.510, 0.89, 0.85, ainR
 ;aL += aJ+ainL
 ;aR += aK+ainR
-outs (aL+ainL)*db(-12), (aR+ainR)*db(-12)
+outs (aL+ainL)*db(-18), (aR+ainR)*db(-18)
 zacl 0, 2
  endin
 
@@ -271,11 +272,11 @@ i 3142 [$t] [8] 3000 [$a] [[256*$d]] [$i]
 i 3142 [$t] [8] 3000 [$b] [[256*$d]] [$i]
 #
 
-$SWELA(0'1'1.08'1.09'2')
-$SWELA(5'1'2.09'2.10'.5')
+$SWELA(0'1'1.08'1.09'8')
+$SWELA(5'1'2.09'2.10'8.5')
 
-$SWELA(13'1.5'1.10'1.11'2')
-$SWELA(16'1'1.13'1.14'.5')
+$SWELA(13'1.5'1.10'1.11'8.5')
+$SWELA(16'1'1.13'1.14'8')
 
 
 
