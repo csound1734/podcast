@@ -196,16 +196,26 @@ ksone       tablei      k(icps)/32000, 2222, 1
 ;-----------------------------------------------------------
  instr 3142
 $CONTROLS
-aL          xanadufmm   k(icps), kFM, 1.5^kenv2
-aR          xanadufmm   k(icps), kFM, 1.5^(-kenv2)
-            zawm        aL*kenv*db(-ksone), iZa
-            zawm        aR*kenv*db(-ksone), iZa+1
+aL,aR       xanadufm   k(icps), kFM*db(kenv_/24), 1.5^kenv2, rnd31:i(20,-.5)
+            zawm        (aL+aR)*kenv*db(-ksone), iZa
+            zawm        (aL+aR)*kenv*db(-ksone), iZa+1
  endin
 
- instr 3146 
-icps GetCpsI p5
-ares marimba p4, icps, .5, .33, 4, 0, 0, -1, 0.1, 0, 0
-outs ares, ares
+
+ instr 3146
+$CONTROLS
+a1,a2          xanadufm   k(icps), kFM, 1.35^kenv2 , 	unirand(0)
+a3,a4          xanadufm   k(icps), kFM, 1.35^(-kenv2), 	unirand:i(1)
+a5,a6          xanadufm   k(icps), kFM, .5^kenv2, 	unirand:i(-3)
+a7,a8          xanadufm   k(icps), kFM, .5^(-kenv2), 	unirand:i(7)
+            zawm        a1*kenv*db(-10-ksone), iZa
+            zawm        a2*kenv*db(-10-ksone), iZa+1
+            zawm        a3*kenv*db(-10-ksone), iZa+2
+            zawm        a4*kenv*db(-10-ksone), iZa+3
+            zawm        a5*kenv*db(-10-ksone), iZa+4
+            zawm        a6*kenv*db(-10-ksone), iZa+5
+            zawm        a7*kenv*db(-10-ksone), iZa+6
+            zawm        a8*kenv*db(-10-ksone), iZa+7
  endin
 
  instr Matrix
@@ -217,31 +227,29 @@ aR      nreverb  aR, 4, .25, 0, 2, 7775, 2, 7774
 zawm (aL+ainL)*db(-18), 17
 zawm (aR+ainR)*db(-18), 18
 
-#define INPUT #zar(3)+zar(4)+zar(5)+zar(6)+zar(7)+zar(8)+zar(9)+zar(10)#
 
-
-aL, aR shimmer_reverb $INPUT, $INPUT, \
+aL, aR shimmer_reverb zar(3), +zar(4), \
 int(random:i(120,450)), \ ;random predelay
 .90, 15000, .45, 100, 2^(11/19)
 zawm aL, 19
 zawm aR, 20
 
 
-aL, aR shimmer_reverb $INPUT, $INPUT, \
+aL, aR shimmer_reverb zar(6), zar(5), \
 int(random:i(120,450)), \ ;random predelay
 .30, 15000, .25, 30, 2^(8/19)
 zawm aL, 21
 zawm aR, 22
 
 
-aL, aR shimmer_reverb $INPUT, $INPUT, \
+aL, aR shimmer_reverb zar(7), zar(8), \
 int(random:i(120,450)), \ ;random predelay
 .50, 15000, .25, 10, 2^(3/19)
 zawm aL, 23
 zawm aR, 24
 
 
-aL, aR shimmer_reverb $INPUT,$INPUT, \
+aL, aR shimmer_reverb zar(10), zar(9), \
 int(random:i(120,450)), \ ;random predelay
 .60, 15000, .25, 10, 2^(5/19)
 zawm aL, 25
@@ -328,20 +336,9 @@ f130 0 -64 -51 8        4.0     110  4     \   ;starts on A+4
 [$EDO(30'19')]      ;A+18
 
 #define SWIRLa(a'm') #
-i 3142 0 [8] [$m] [$a] [[1024]] [2] 3
+i 3146 0 [8] [$m] [$a] [[1024]] [2] 3
 #
 
-#define SWIRLb(a'm') # ;(start)time, pitch1, pitch2, env1, env2
-i 3142 [0] [8] [$m] [$a] [[1024]] [2] 5
-#
-
-#define SWIRLc(a'm') #
-i 3142 0 [8] [$m] [$a] [[1024]] [2] 7
-#
-
-#define SWIRLd(a'm') #
-i 3142 0 [8] [$m] [$a] [[1024]] [2] 9
-#
 
 #define SWELL(t'd'a'b'i') #
 i 3142 [$t] [8] 3000 [$a] [[256*$d]] [$i] 1
@@ -349,22 +346,30 @@ i 3142 [$t] [8] 3000 [$b] [[256*$d]] [$i] 1
 #
 
 b 0
+
+i 3142 [0] [8] 3000 [1.07] [[420]] [0.65] 1
 $SWIRLa(1.08'3004')
 $SWIRLa(1.09'3004')
 b 5
+i 3142 [0] [8] 3000 [1.07] [[420]] [0.65] 1
 $SWIRLa(2.05'3004')
 $SWIRLa(2.06'3004')
 b 8
-$SWIRLc(1.08'3004')
+i 3142 [0] [8] 3000 [1.05] [[420]] [0.65] 1
+$SWIRLa(1.08'3004')
 b 11
-$SWIRLc(1.08'3004')
+i 3142 [0] [8] 3000 [1.04] [[420]] [0.65] 1
+$SWIRLa(1.08'3004')
  b 16
-$SWIRLb(1.08'3004')
+i 3142 [0] [8] 3000 [1.03] [[420]] [0.65] 1
+$SWIRLa(1.08'3004')
 b 21
-$SWIRLb(1.08'3004')
+i 3142 [0] [8] 3000 [1.00] [[420]] [0.65] 1
+$SWIRLa(1.08'3004')
 b26
-$SWIRLc(1.08'3004')
-$SWIRLc(1.16'3004'
+i 3142 [0] [8] 3000 [1.06] [[420]] [0.65] 1
+$SWIRLa(1.08'3004')
+$SWIRLa(1.16'3004'
 
 
 
