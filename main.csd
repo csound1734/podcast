@@ -217,12 +217,36 @@ aR      nreverb  aR, 4, .25, 0, 2, 7775, 2, 7774
 zawm (aL+ainL)*db(-18), 17
 zawm (aR+ainR)*db(-18), 18
 
-ainL zar 3
-ainR zar 4
-aL, aR shimmer_reverb ainL, ainR, 120, .95, 12000, .45, 100, 2^(11/19)
+#define INPUT #zar(3)+zar(4)+zar(5)+zar(6)+zar(7)+zar(8)+zar(9)+zar(10)#
+
+
+aL, aR shimmer_reverb $INPUT, $INPUT, \
+int(random:i(120,450)), \ ;random predelay
+.90, 15000, .45, 100, 2^(11/19)
 zawm aL, 19
 zawm aR, 20
-zacl 0, 4
+
+
+aL, aR shimmer_reverb $INPUT, $INPUT, \
+int(random:i(120,450)), \ ;random predelay
+.30, 15000, .25, 30, 2^(8/19)
+zawm aL, 21
+zawm aR, 22
+
+
+aL, aR shimmer_reverb $INPUT, $INPUT, \
+int(random:i(120,450)), \ ;random predelay
+.50, 15000, .25, 10, 2^(3/19)
+zawm aL, 23
+zawm aR, 24
+
+
+aL, aR shimmer_reverb $INPUT,$INPUT, \
+int(random:i(120,450)), \ ;random predelay
+.60, 15000, .25, 10, 2^(5/19)
+zawm aL, 25
+zawm aR, 26
+zacl 0, 16
  endin
 
  instr 8000 ;output a pair of za-signals
@@ -241,10 +265,16 @@ zacl iZaL, iZaR
 
 
 
-i "Matrix" 0 z
+i "Matrix" 0 z ;route all the channels around. feeds to instr 8000
 
-i 8000 0 z 17
-i 8000 0 z 19
+i 8000 0 z 17 ;make za-17 and za-18 into master outs
+i 8000 0 z 19 ;make za-19 and za-20 into master outs too
+i 8000 0 z 21
+i 8000 0 z 23
+i 8000 0 z 25
+i 8000 0 z 27
+i 8000 0 z 29
+i 8000 0 z 31
 
 ;   The Function Tables
 ;   -------------------
@@ -278,9 +308,9 @@ f 3004 0 2048 -7 -96 256 -24 256 -26 512 -26 512 -30 512 -96
 f129 0 -64 -51 8        4.0      55      0      \
 1 \                 ;A
 [$EDO(3'19')] \     ;A+1(chrom semi)
-[$EDO(6'19')] \     ;A+6(major third)
+[$EDO(5'19')] \     ;A+6(major third)
 [$EDO(11'19')] \    ;A+11(p fifth)
-[$EDO(17'19')] \   ;A+17(maj seventh)
+[$EDO(19'19')] \   ;A+19(octave)
 [$EDO(22'19')] \    ;A2+3(whole tone)
 [$EDO(27'19')] \   ;A2+8(p fourth)
 [$EDO(33'19')]      ;A2+14(maj sixth)
@@ -289,16 +319,28 @@ f129 0 -64 -51 8        4.0      55      0      \
 f130 0 -64 -51 8        4.0     110  4     \   ;starts on A+4
 
 1                   ;A+4(septimal whole)
-[$EDO(4'19')] \     ;A+8(p fourth)
-[$EDO(7'19')] \     ;A+11(p fifth)
-[$EDO(11'19')] \    ;A+14(p sixth)
+[$EDO(7'19')] \     ;A+8(p fourth)
+[$EDO(11'19')] \     ;A+11(p fifth)
+[$EDO(14'19')] \    ;A+14(p sixth)
 [$EDO(15'19')] \   ;A
-[$EDO(21'19')] \    ;A+6
-[$EDO(30'19')] \   ;A+14
-[$EDO(33'19')]      ;A+18
+[$EDO(19'19')] \    ;A+6
+[$EDO(21'19')] \   ;A+14
+[$EDO(30'19')]      ;A+18
 
-#define SWIRL(t') #
-i 3142 [$t] [8] 3004 [1.08] [[1024]] [2] 3
+#define SWIRLa(a'm') #
+i 3142 0 [8] [$m] [$a] [[1024]] [2] 3
+#
+
+#define SWIRLb(a'm') # ;(start)time, pitch1, pitch2, env1, env2
+i 3142 [0] [8] [$m] [$a] [[1024]] [2] 5
+#
+
+#define SWIRLc(a'm') #
+i 3142 0 [8] [$m] [$a] [[1024]] [2] 7
+#
+
+#define SWIRLd(a'm') #
+i 3142 0 [8] [$m] [$a] [[1024]] [2] 9
 #
 
 #define SWELL(t'd'a'b'i') #
@@ -306,15 +348,35 @@ i 3142 [$t] [8] 3000 [$a] [[256*$d]] [$i] 1
 i 3142 [$t] [8] 3000 [$b] [[256*$d]] [$i] 1
 #
 
-$SWIRL(0'8)
+b 0
+$SWIRLa(1.08'3004')
+$SWIRLa(1.09'3004')
+b 5
+$SWIRLa(2.05'3004')
+$SWIRLa(2.06'3004')
+b 8
+$SWIRLc(1.08'3004')
+b 11
+$SWIRLc(1.08'3004')
+ b 16
+$SWIRLb(1.08'3004')
+b 21
+$SWIRLb(1.08'3004')
+b26
+$SWIRLc(1.08'3004')
+$SWIRLc(1.16'3004'
 
+
+
+
+e/*
 b 10 
 $SWELL(0'1'1.08'1.09'8')
 $SWELL(5'1'2.09'2.10'8.5')
 
 $SWELL(13'1.5'1.10'1.11'8.5')
 $SWELL(16'1'1.13'1.14'8')
-
+*/
 
 
 
