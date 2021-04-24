@@ -1,6 +1,6 @@
 <CsoundSynthesizer>
 <CsOptions>
--odac -d -m195
+-odac -m195
 </CsOptions>
 <CsInstruments> 
 ; These must all match the host as printed when Csound starts.
@@ -9,7 +9,7 @@ ksmps       =           128
 nchnls      =           2
 nchnls_i    =           1
 
-zakinit 32, 32
+zakinit 64, 64
 
 ;-----------BABOON REVERB-----------------------------------
 /*
@@ -176,8 +176,11 @@ xout ares				;OUTPUTS
 iN     xin ;input: transposition, scale degree
 iscaleft    =           128+int(iN)
 iN          =           100*(iN%1)
-icps        table       iN%ftlen(iscaleft), iscaleft, 0, 0, 0
+            print       iscaleft
+            print       iN
+icps        table       iN, iscaleft, 0, 0, 0
             xout        icps
+            print       icps
  endop
 
 #define CONTROLS #
@@ -218,6 +221,13 @@ a7,a8          xanadufm   k(icps), kFM, .5^(-kenv2), 	unirand:i(7)
             zawm        a8*kenv*db(-10-ksone), iZa+7
  endin
 
+ instr 3150
+$CONTROLS
+aL,aR       xanadufm   k(icps), kFM, 1.5, 0
+            zawm        (aL+aR)*kenv*db(-ksone), iZa
+            zawm        (aL+aR)*kenv*db(-ksone), iZa+1
+ endin
+
  instr Matrix
 ainL zar 1
 ainR zar 2
@@ -255,6 +265,11 @@ int(random:i(120,450)), \ ;random predelay
 zawm aL, 25
 zawm aR, 26
 zacl 0, 16
+
+adryL zar 50
+adryR zar 51
+outs adryL, adryR
+zacl 50,51
  endin
 
  instr 8000 ;output a pair of za-signals
@@ -310,10 +325,21 @@ f 3001 0 2048 -7 -96 512 -10 512 -12 512 -17 256 -17 256 -96
 f 3002 0 2048 -7 -96 128 -10 128 -12 256 -14 512 -13 1024 -96
 f 3003 0 2048 -7 -96 126 -32 126 -48 256 -39 512 -36 512 -31 256 -37 256 -96
 f 3004 0 2048 -7 -96 256 -24 256 -26 512 -26 512 -30 512 -96 
+{4 k
+f [$k+3010] 0 2048 -7 -96 [$k*512] -11 [[4-$k]*512] -96
+}
+{4 k
+f [$k+3020] 0 2048 -7 -96 256 -12 [$k*384] -12 256 -96 [[4-$k]*384] -96
+}
+f 3024 0 2048 -7 -96 256 -12 [512+1024] -12 256 -96
+f 3025 0 2048 -7 -96 256 -12 [512+1024+128+64] -12 64 -96
+f 3026 0 2048 -7 -96 64 -12 [512+1024+256+128] -12 64 -96
+f 3026 0 2048 -7 -96 64 -12 [512+1024+128+64] -12 256 -96
+
 
 #define EDO(a'b') #[2^[[$a]/[$b]]]#
              ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
-f129 0 -64 -51 8        4.0      55      0      \
+f129 0 -32 -51 8        4.0      55      0      \
 1 \                 ;A
 [$EDO(3'19')] \     ;A+1(chrom semi)
 [$EDO(5'19')] \     ;A+6(major third)
@@ -323,8 +349,9 @@ f129 0 -64 -51 8        4.0      55      0      \
 [$EDO(27'19')] \   ;A2+8(p fourth)
 [$EDO(33'19')]      ;A2+14(maj sixth)
 
+/*
              ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
-f130 0 -64 -51 8        4.0     110  4     \   ;starts on A+4
+f130 0 -32 -51 8        4.0     110  4     \   ;starts on A+4
 
 1                   ;A+4(septimal whole)
 [$EDO(7'19')] \     ;A+8(p fourth)
@@ -334,6 +361,19 @@ f130 0 -64 -51 8        4.0     110  4     \   ;starts on A+4
 [$EDO(19'19')] \    ;A+6
 [$EDO(21'19')] \   ;A+14
 [$EDO(30'19')]      ;A+18
+*/
+
+             ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
+f130 0 -32 -51 8        2.0      55      0      \
+1 \                 ;A
+[$EDO(3'19')] \     ;A+1(chrom semi)
+[$EDO(5'19')] \     ;A+6(major third)
+[$EDO(8'19')] \    ;A+11(p fifth)
+[$EDO(11'19')] \   ;A+19(octave)
+[$EDO(14'19')] \    ;A2+3(whole tone)
+[$EDO(16'19')] \   ;A2+8(p fourth)
+[$EDO(18'19')] \   ;A2+8(p fourth)
+[$EDO(19'19')]      ;A2+14(maj sixth)
 
 #define SWIRLa(a'm') #
 i 3146 0 [8] [$m] [$a] [[1024]] [2] 3
@@ -345,6 +385,18 @@ i 3142 [$t] [8] 3000 [$a] [[256*$d]] [$i] 1
 i 3142 [$t] [8] 3000 [$b] [[256*$d]] [$i] 1
 #
 
+
+i 3150 0 1 3026 2.00 2048 3 51
+i 3150 1 . 3026 2.01 2048 3 51
+i 3150 2 . 3026 2.02 2048 3 51
+i 3150 3 . 3026 2.03 2048 3 51
+i 3150 4 . 3026 2.04 2048 3 51
+i 3150 5 . 3026 2.05 2048 3 51
+i 3150 6 . 3026 2.06 2048 3 51
+i 3150 7 . 3026 2.07 2048 3 51
+i 3150 8 . 3026 2.08 2048 3 51
+
+/*
 b 0
 
 i 3142 [0] [8] 3000 [1.07] [[420]] [0.65] 1
@@ -370,7 +422,7 @@ b26
 i 3142 [0] [8] 3000 [1.06] [[420]] [0.65] 1
 $SWIRLa(1.08'3004')
 $SWIRLa(1.16'3004'
-
+*/
 
 
 
