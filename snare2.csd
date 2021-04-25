@@ -136,16 +136,17 @@ xout aout
         endop
 
  instr Matrix
-ilook    = .05 ;compressor attack
+ilook    = .005 ;compressor attack
 ainL zar 0
 ainR zar 1
 zacl 0,1
 asum = ainL+ainR
 asum /= 2
-asum tap_tubewarmth asum, k(3.5), k(0)
+asum compress2 asum, asum, -92, -50, -40, db(3), ilook, .05, ilook
+asum tap_tubewarmth asum*db(3), k(2), k(10)
 asum *= db(-2)
-acom compress2 asum, asum, -92, -37.2, -20, db(3), ilook, .12, ilook
-out acom
+;acom compress2 asum, asum, -92, -37.2, -20, db(3), ilook, .12, ilook
+out asum
  endin
 
 
@@ -207,15 +208,19 @@ ares = amod1+amod2+amod3+amod4+amod5+amod6+astrike*4+asticks
 endin
 
  instr 3
-astrike trirand expon:k(1,0.01,0.37)
-adl   line   1/kr, 1, 0.180
+astrike gauss expon:k(1,0.01,0.37)
+adl   line   1/kr, 1, random:i(.12, .88)
 a1    delayr 3.0
 a2    deltapx adl, 4
       delayw astrike
-a2    diff a2
-astrike = a2
- zawm astrike*ampdbfs(-17), 0
- zawm astrike*ampdbfs(-17), 1
+aenv adsr 0.04, p3-.04, 0,0
+astrike *= aenv
+;astrike phaser1 astrike, 31, 3, .96
+astrike diff astrike
+adel  delay astrike, 1/30
+astrike += adel*db(-9)
+ zawm astrike*ampdbfs(-3), 0
+ zawm astrike*ampdbfs(-3), 1
  endin
 
 instr 4	
@@ -224,7 +229,6 @@ astrike oscil 0.02, expon:k(1,0.01,0.38)*1100
 astrenv linseg 0, 0.001, 1, 0.018, 1, 0.01, 0, 10000, 0
 astrike *= astrenv
 astrike *= 1/0.02
-astrike chebyshevpoly astrike, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1
 astrike *= 0.04
 adl   expon   1/kr, 1, 0.5
 a1    delayr 3.0
@@ -233,9 +237,8 @@ a2    deltapx adl, 4
 astrike = a2
 amode2 mode a2, cpspch(7.02), 5
 amode1 mode a2, cpspch(6.04), 5
-;a2 += amode2*.25
-asum = a2*ampdbfs(-14)+amode1*ampdbfs(-13)+amode2*ampdbfs(-15)
-asum K35_lpf asum, 350, 2.0, 1
+asum = a2*ampdbfs(-5)+amode1*ampdbfs(-3)+amode2*ampdbfs(-5)
+asum atone asum, 40
 zawm asum, 0
 zawm asum, 1
  endin
