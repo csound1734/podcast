@@ -197,9 +197,9 @@ ksone       init        isone
 ;-----------------------------------------------------------
  instr 3142
 $CONTROLS
-aL,aR       xanadufm   k(icps), kFM*db(kenv_/24), 1.5^kenv2, rnd31:i(20,-.5)
-            zawm        (aL+aR)*kenv*db(-ksone), iZa
-            zawm        (aL+aR)*kenv*db(-ksone), iZa+1
+aL,aR       xanadufm   k(icps), iFM, 1.5^kenv2, 0
+            zawm        (aL+aR)*.5*kenv*db(1-isone), iZa
+            zawm        (aL+aR)*.5*kenv*db(1-isone), iZa+1
  endin
 
 
@@ -239,8 +239,8 @@ aR *= $l/3
 #define STEREOCOMP #
 kpeakL rms aL
 kpeakR rms aR
-printk .1, (kpeakL/0dbfs), 10
-printk .1, (kpeakR/0dbfs)
+;printk .1, (kpeakL/0dbfs), 10
+;printk .1, (kpeakR/0dbfs)
 aL dam aL, 0dbfs*.004, db(-7.6), 1, 0.008, 0.12
 aR dam aL, 0dbfs*.004, db(-7.6), 1, 0.008, 0.12
 aL *= db(6)
@@ -459,8 +459,21 @@ i 3150 [$x] 1 3026 [[$x*.01]+4.09] 2048 3 .
 i 3150 [$x+.5] 1 3026 [[$x*.01]+4.11] 2048 3 .
 }
 */
-b 0
+
+i 3142 0 8 3012 1.07 512 8 1
+i 3142 ^+5 8 3012 1.13 512 .1 1
+i 3142 ^+3 8 3011 1.07 512 8 1
+i 3142 ^+5 8 3012 1.13 512 .1 1
+
+/* special "tense" or "sad" chord"
+i 3142 13 8 3012 2.05 512 3 1
+i 3142 13 8 3012 2.11 512 3 1
+*/
+
+b 21
 $SWIRLa(1.06'3026')
+
+
 
 </CsScore>
 </CsoundSynthesizer>    
