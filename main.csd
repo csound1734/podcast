@@ -176,11 +176,8 @@ xout ares				;OUTPUTS
 iN     xin ;input: transposition, scale degree
 iscaleft    =           128+int(iN)
 iN          =           100*(iN%1)
-            print       iscaleft
-            print       iN
-icps        table       iN, iscaleft, 0, 0, 0
+icps        tab_i       iN, iscaleft, 0
             xout        icps
-            print       icps
  endop
 
 #define CONTROLS #
@@ -193,7 +190,8 @@ kenv_       table       kndx, ienv, 0, 0, 0
 kenv        =           ampdbfs(kenv_)-ampdbfs(-96) 
 kenv2       linseg      1, p3, -1
 kFM         =           iFM ;FM Index for xanadufm
-ksone       tablei      k(icps)/32000, 2222, 1
+isone       tablei      icps/16384, 2222, 1, 0, 1
+ksone       init        isone
 #
 
 ;-----------------------------------------------------------
@@ -207,26 +205,47 @@ aL,aR       xanadufm   k(icps), kFM*db(kenv_/24), 1.5^kenv2, rnd31:i(20,-.5)
 
  instr 3146
 $CONTROLS
-a1,a2          xanadufm   k(icps), kFM, 1.35^kenv2 , 	unirand(0)
-a3,a4          xanadufm   k(icps), kFM, 1.35^(-kenv2), 	unirand:i(1)
-a5,a6          xanadufm   k(icps), kFM, .5^kenv2, 	unirand:i(-3)
-a7,a8          xanadufm   k(icps), kFM, .5^(-kenv2), 	unirand:i(7)
-            zawm        a1*kenv*db(-10-ksone), iZa
-            zawm        a2*kenv*db(-10-ksone), iZa+1
-            zawm        a3*kenv*db(-10-ksone), iZa+2
-            zawm        a4*kenv*db(-10-ksone), iZa+3
-            zawm        a5*kenv*db(-10-ksone), iZa+4
-            zawm        a6*kenv*db(-10-ksone), iZa+5
-            zawm        a7*kenv*db(-10-ksone), iZa+6
-            zawm        a8*kenv*db(-10-ksone), iZa+7
+icps2          GetCpsI    p5+.01
+icps3          GetCpsI    p5+.02
+icps4          GetCpsI    p5+.03
+a1,a2          xanadufm   k(icps), iFM, 1.35^kenv2 , 	0
+a3,a4          xanadufm   k(icps2), iFM, 1.35^(-kenv2), 	0
+a5,a6          xanadufm   k(icps3), iFM, .5^kenv2, 	0
+a7,a8          xanadufm   k(icps4), iFM, .5^(-kenv2), 	0
+            zawm        (1/8)*a1*kenv*(1-isone), iZa
+            zawm        (1/8)*a2*kenv*(1-isone), iZa+1
+            zawm        (1/8)*a3*kenv*(1-isone), iZa+2
+            zawm        (1/8)*a4*kenv*(1-isone), iZa+3
+            zawm        (1/8)*a5*kenv*(1-isone), iZa+4
+            zawm        (1/8)*a6*kenv*(1-isone), iZa+5
+            zawm        (1/8)*a7*kenv*(1-isone), iZa+6
+            zawm        (1/8)*a8*kenv*(1-isone), iZa+7
  endin
 
  instr 3150
 $CONTROLS
-aL,aR       xanadufm   k(icps), kFM, 1.5, 0
-            zawm        (aL+aR)*kenv*db(-ksone), iZa
-            zawm        (aL+aR)*kenv*db(-ksone), iZa+1
+print icps
+ares         xanadufmm  icps, 1, 1
+             zawm       ares*kenv*(1-isone), iZa
  endin
+
+#define STEREOHISH(f'l') #
+aL rbjeq aL, 6600+0*$f, 1/$l, 0, .08, 10 
+aL *= $l/3
+aR rbjeq aR, 6600+0*$f, 1/$l, 0, .08, 10
+aR *= $l/3
+#
+
+#define STEREOCOMP #
+kpeakL rms aL
+kpeakR rms aR
+printk .1, (kpeakL/0dbfs), 10
+printk .1, (kpeakR/0dbfs)
+aL dam aL, 0dbfs*.004, db(-7.6), 1, 0.008, 0.12
+aR dam aL, 0dbfs*.004, db(-7.6), 1, 0.008, 0.12
+aL *= db(6)
+aR *= db(6)
+#
 
  instr Matrix
 ainL zar 1
@@ -238,30 +257,42 @@ zawm (aL+ainL)*db(-18), 17
 zawm (aR+ainR)*db(-18), 18
 
 
-aL, aR shimmer_reverb zar(3), +zar(4), \
+aL, aR shimmer_reverb zar(3), zar(4), \
 int(random:i(120,450)), \ ;random predelay
-.90, 15000, .45, 100, 2^(11/19)
+.90, 15000, .65, 100, 2^(11/19)
+;$STEREOHISH(3000'db(8)')
+$STEREOCOMP
+$STEREOHISH(12000'db(24)')
 zawm aL, 19
 zawm aR, 20
 
 
 aL, aR shimmer_reverb zar(6), zar(5), \
 int(random:i(120,450)), \ ;random predelay
-.30, 15000, .25, 30, 2^(8/19)
+.30, 15000, .65, 30, 2^(8/19)
+;$STEREOHISH(3000'db(8)')
+$STEREOCOMP
+$STEREOHISH(12000'db(24)')
 zawm aL, 21
 zawm aR, 22
 
 
 aL, aR shimmer_reverb zar(7), zar(8), \
 int(random:i(120,450)), \ ;random predelay
-.50, 15000, .25, 10, 2^(3/19)
+.50, 15000, .65, 10, 2^(3/19)
+;$STEREOHISH(3000'db(8)')
+$STEREOCOMP
+$STEREOHISH(12000'db(24)')
 zawm aL, 23
 zawm aR, 24
 
 
 aL, aR shimmer_reverb zar(10), zar(9), \
 int(random:i(120,450)), \ ;random predelay
-.60, 15000, .25, 10, 2^(5/19)
+.60, 15000, .65, 10, 2^(5/19)
+;$STEREOHISH(3000'db(8)')
+$STEREOCOMP
+$STEREOHISH(12000'db(24)')
 zawm aL, 25
 zawm aR, 26
 zacl 0, 16
@@ -281,6 +312,7 @@ outs aL, aR
 zacl iZaL, iZaR
  endin
 
+
 </CsInstruments>
 
 <CsScore>
@@ -291,13 +323,10 @@ zacl iZaL, iZaR
 i "Matrix" 0 z ;route all the channels around. feeds to instr 8000
 
 i 8000 0 z 17 ;make za-17 and za-18 into master outs
-i 8000 0 z 19 ;make za-19 and za-20 into master outs too
+i 8000 0 z 19 ;ditto za-19 and za-20
 i 8000 0 z 21
 i 8000 0 z 23
 i 8000 0 z 25
-i 8000 0 z 27
-i 8000 0 z 29
-i 8000 0 z 31
 
 ;   The Function Tables
 ;   -------------------
@@ -311,7 +340,7 @@ f4 0 65537 -5  1 65537 0.1 ;strike impulse response for marimba
 ;-----------------------------------------------------------
 
 /* SONE FUNCTION */
-f 2222 0 16385 "sone" 0 32000 32000 0
+f 2222 0 16385 -16 0 16384 -20 1
 
 ;-----------------NREVERB FILTER TABLES---------------------
 f 7777 0 4 -2 [8/13] [233/500] [.5] [.95] 
@@ -338,42 +367,76 @@ f 3026 0 2048 -7 -96 64 -12 [512+1024+128+64] -12 256 -96
 
 
 #define EDO(a'b') #[2^[[$a]/[$b]]]#
+
+;---------------------------------------------------------------------------------
+;---------------------------------------------------------------------------------
+/*		SCALES	AND	MOTIFS 						*/
+;---------------------------------------------------------------------------------
+;---------------------------------------------------------------------------------
+             
              ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
-f129 0 -32 -51 8        4.0      55      0      \
+f129 0 -32 -51 7        4.0      55      0      \  ;to use this scale feed "1.xx" into p5 for $CONTROL instruments
 1 \                 ;A
-[$EDO(3'19')] \     ;A+1(chrom semi)
-[$EDO(5'19')] \     ;A+6(major third)
+[$EDO(6'19')] \     ;A+1(chrom semi)
+[$EDO(11'19')] \     ;A+6(major third)
+[$EDO(17'19')] \    ;A+11(p fifth)
+[2*[$EDO(3'19')]] \   ;A+19(octave)
+[2*[$EDO(8'19')]] \    ;A2+3(whole tone)
+[2*[$EDO(14'19')]] \   ;A2+8(p fourth)
+[2*[$EDO(19'19')]]      ;A2+14(maj sixth)
+
+             ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
+f130 0 -32 -51 7        4.0      220      9      \  ;to use this scale feed "2.xx" into p5 for $CONTROL instruments
+1 \                 ;A
+[$EDO(5'19')] \     ;A+1(chrom semi)
+[$EDO(8'19')] \     ;A+6(major third)
+[$EDO(13'19')] \    ;A+11(p fifth)
+[2*[$EDO(2'19')]] \   ;A+19(octave)
+[2*[$EDO(7'19')]] \    ;A2+3(whole tone)
+[2*[$EDO(16'19')]] \   ;A2+8(p fourth)
+[2*[$EDO(19'19')]]      ;A2+14(maj sixth)
+
+
+             ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
+f131 0 -32 -51 7        4.0      110      5      \  ;to use this scale feed "1.xx" into p5 for $CONTROL instruments
+1 \                 ;A
+[$EDO(4'19')] \     ;A+1(chrom semi)
+[$EDO(7'19')] \     ;A+6(major third)
 [$EDO(11'19')] \    ;A+11(p fifth)
-[$EDO(19'19')] \   ;A+19(octave)
-[$EDO(22'19')] \    ;A2+3(whole tone)
-[$EDO(27'19')] \   ;A2+8(p fourth)
-[$EDO(33'19')]      ;A2+14(maj sixth)
-
-/*
-             ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
-f130 0 -32 -51 8        4.0     110  4     \   ;starts on A+4
-
-1                   ;A+4(septimal whole)
-[$EDO(7'19')] \     ;A+8(p fourth)
-[$EDO(11'19')] \     ;A+11(p fifth)
-[$EDO(14'19')] \    ;A+14(p sixth)
-[$EDO(15'19')] \   ;A
-[$EDO(19'19')] \    ;A+6
-[$EDO(21'19')] \   ;A+14
-[$EDO(30'19')]      ;A+18
-*/
+[2*[$EDO(1'19')]] \   ;A+19(octave)
+[2*[$EDO(8'19')]] \    ;A2+3(whole tone)
+[2*[$EDO(14'19')]] \   ;A2+8(p fourth)
+[2*[$EDO(19'19')]]      ;A2+14(maj sixth)
 
              ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
-f130 0 -32 -51 8        2.0      55      0      \
+f132 0 -32 -51 7        4.0      55      0      \  ;to use this scale feed "1.xx" into p5 for $CONTROL instruments
+1 \                 ;A
+[$EDO(6'19')] \     ;A+1(chrom semi)
+[$EDO(11'19')] \     ;A+6(major third)
+[$EDO(17'19')] \    ;A+11(p fifth)
+[2*[$EDO(3'19')]] \   ;A+19(octave)
+[2*[$EDO(8'19')]] \    ;A2+3(whole tone)
+[2*[$EDO(14'19')]] \   ;A2+8(p fourth)
+[2*[$EDO(19'19')]]      ;A2+14(maj sixth)
+
+
+             ;numgrades interval basefreq basekey tuningRatio1 tuningRatio2
+f148 0 -32 -51 7        2.0      55      0      \  ;"20.xx"
 1 \                 ;A
 [$EDO(3'19')] \     ;A+1(chrom semi)
-[$EDO(5'19')] \     ;A+6(major third)
+[$EDO(6'19')] \     ;A+6(major third)
 [$EDO(8'19')] \    ;A+11(p fifth)
 [$EDO(11'19')] \   ;A+19(octave)
 [$EDO(14'19')] \    ;A2+3(whole tone)
-[$EDO(16'19')] \   ;A2+8(p fourth)
-[$EDO(18'19')] \   ;A2+8(p fourth)
+[$EDO(17'19')] \   ;A2+8(p fourth)
 [$EDO(19'19')]      ;A2+14(maj sixth)
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+
+;---------------------------------------------------------------------------
+/*			PERFORMANCE			*/
+;---------------------------------------------------------------------------
 
 #define SWIRLa(a'm') #
 i 3146 0 [8] [$m] [$a] [[1024]] [2] 3
@@ -385,61 +448,19 @@ i 3142 [$t] [8] 3000 [$a] [[256*$d]] [$i] 1
 i 3142 [$t] [8] 3000 [$b] [[256*$d]] [$i] 1
 #
 
-
-i 3150 0 1 3026 2.00 2048 3 51
-i 3150 1 . 3026 2.01 2048 3 51
-i 3150 2 . 3026 2.02 2048 3 51
-i 3150 3 . 3026 2.03 2048 3 51
-i 3150 4 . 3026 2.04 2048 3 51
-i 3150 5 . 3026 2.05 2048 3 51
-i 3150 6 . 3026 2.06 2048 3 51
-i 3150 7 . 3026 2.07 2048 3 51
-i 3150 8 . 3026 2.08 2048 3 51
-
 /*
-b 0
-
-i 3142 [0] [8] 3000 [1.07] [[420]] [0.65] 1
-$SWIRLa(1.08'3004')
-$SWIRLa(1.09'3004')
+{3 x
+i 3150 [[$x]] 1 3026 [[$x*.01]+1.07] 2048 3 1
+i 3150 [[$x+.5]] 1 3026 [[$x*.01]+1.09] 2048 3 .
+}
 b 5
-i 3142 [0] [8] 3000 [1.07] [[420]] [0.65] 1
-$SWIRLa(2.05'3004')
-$SWIRLa(2.06'3004')
-b 8
-i 3142 [0] [8] 3000 [1.05] [[420]] [0.65] 1
-$SWIRLa(1.08'3004')
-b 11
-i 3142 [0] [8] 3000 [1.04] [[420]] [0.65] 1
-$SWIRLa(1.08'3004')
- b 16
-i 3142 [0] [8] 3000 [1.03] [[420]] [0.65] 1
-$SWIRLa(1.08'3004')
-b 21
-i 3142 [0] [8] 3000 [1.00] [[420]] [0.65] 1
-$SWIRLa(1.08'3004')
-b26
-i 3142 [0] [8] 3000 [1.06] [[420]] [0.65] 1
-$SWIRLa(1.08'3004')
-$SWIRLa(1.16'3004'
+{4 x
+i 3150 [$x] 1 3026 [[$x*.01]+4.09] 2048 3 .
+i 3150 [$x+.5] 1 3026 [[$x*.01]+4.11] 2048 3 .
+}
 */
-
-
-
-e/*
-b 10 
-$SWELL(0'1'1.08'1.09'8')
-$SWELL(5'1'2.09'2.10'8.5')
-
-$SWELL(13'1.5'1.10'1.11'8.5')
-$SWELL(16'1'1.13'1.14'8')
-*/
-
-
-
-
-
-
+b 0
+$SWIRLa(1.06'3026')
 
 </CsScore>
 </CsoundSynthesizer>    
