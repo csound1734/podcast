@@ -144,9 +144,12 @@ asum = ainL+ainR
 asum /= 2
 asum compress2 asum, asum, -92, -50, -40, db(3), ilook, .05, ilook
 asum tap_tubewarmth asum*db(3), k(2), k(10)
+asum dcblock asum, 1.01
 asum *= db(-2)
-;acom compress2 asum, asum, -92, -37.2, -20, db(3), ilook, .12, ilook
-out asum
+acom compress2 asum, asum, -92, -37.2, -20, db(3), ilook, .12, ilook
+acom atone acom, 90
+acom butlp acom, 9000
+out acom
  endin
 
 
